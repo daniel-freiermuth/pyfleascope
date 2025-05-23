@@ -54,8 +54,8 @@ class FleaScope():
             raise ValueError("Time frame cannot be negative.")
         if time_frame.total_seconds() > 2:
             raise ValueError("Time frame too large. Max 2 seconds.")
-        if time_frame.microseconds < 100:
-            raise ValueError("Time frame too small. Min 100 microseconds.")
+        if time_frame.seconds == 0 and time_frame.microseconds < 111:
+            raise ValueError("Time frame too small. Min 111 microseconds.")
 
         if delay.total_seconds() < 0:
             raise ValueError("Delay cannot be negative.")
@@ -63,6 +63,7 @@ class FleaScope():
             raise ValueError("Delay too large. Max 1 second.")
 
         ticks_per_sample = int(self.timedelta_to_ticks_div2000(time_frame))
+        assert ticks_per_sample > 0, "Ticks per sample must be greater than 0"
         delay_ticks = self.timedelta_to_ticks_div2000(delay) * 2000
         delay_samples = int(delay_ticks / ticks_per_sample)
         return self._raw_read(ticks_per_sample, trigger_fields, delay_samples)
