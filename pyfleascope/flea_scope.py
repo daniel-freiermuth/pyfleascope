@@ -5,7 +5,7 @@ import logging
 import pandas as pd
 import io
 from pyfleascope.serial_terminal import SerialTerminal
-from pyfleascope.trigger_config import AnalogTrigger, AnalogTriggerBehavior, BitTrigger
+from pyfleascope.trigger_config import AnalogTrigger, AnalogTriggerBehavior, DigitalTrigger
 
 logging.basicConfig(level=logging.INFO)
 
@@ -154,10 +154,10 @@ class FleaProbe():
             raise ValueError("Zero-Calibration needs to be done first.")
         self.cal_3v3 = self.read_stable_value_for_calibration() - self.cal_zero
 
-    def read(self, time_frame: timedelta, trigger: BitTrigger | AnalogTrigger | None = None, delay: timedelta = timedelta(milliseconds=0)):
+    def read(self, time_frame: timedelta, trigger: DigitalTrigger | AnalogTrigger | None = None, delay: timedelta = timedelta(milliseconds=0)):
         if trigger is None:
             trigger = AnalogTrigger(0, AnalogTriggerBehavior.AUTO)
-        if isinstance(trigger, BitTrigger):
+        if isinstance(trigger, DigitalTrigger):
             trigger_fields = trigger.into_trigger_fields()
         else:
             trigger_fields = trigger.into_trigger_fields(self._voltage_to_raw)
