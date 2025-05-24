@@ -81,7 +81,9 @@ class FleaScope():
             sep=",",
             header=None,
             dtype={0: float, 1: str})
-        # data['bnc'] = data['bnc'] / 4
+        data.set_index(
+            pd.RangeIndex(start=0, stop=len(data), step=1) * tick_amount / 1_000_000 / self._MSPS,
+            inplace=True)
         return data
 
     @staticmethod
