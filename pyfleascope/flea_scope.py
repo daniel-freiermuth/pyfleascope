@@ -132,12 +132,12 @@ class FleaProbe():
                              f"{bnc_data.min()} to {bnc_data.max()}.")
         return bnc_data.mean()
 
-    def raw_to_voltage(self, raw_value: float):
+    def _raw_to_voltage(self, raw_value: float):
         if self.cal_zero is None or self.cal_3v3 is None:
             raise ValueError("Calibration values are not set.")
         return (raw_value - self.cal_zero) / self.cal_3v3 * 3.3
 
-    def voltage_to_raw(self, voltage: float):
+    def _voltage_to_raw(self, voltage: float):
         if self.cal_zero is None or self.cal_3v3 is None:
             raise ValueError("Calibration values are not set.")
         return (voltage / 3.3 * self.cal_3v3) + self.cal_zero
@@ -160,7 +160,7 @@ class FleaProbe():
         if isinstance(trigger, BitTrigger):
             trigger_fields = trigger.into_trigger_fields()
         else:
-            trigger_fields = trigger.into_trigger_fields(self.voltage_to_raw)
+            trigger_fields = trigger.into_trigger_fields(self._voltage_to_raw)
         df = self.scope.raw_read(time_frame, trigger_fields, delay)
-        df['bnc'] = self.raw_to_voltage(df['bnc'])
+        df['bnc'] = self._raw_to_voltage(df['bnc'])
         return df
