@@ -30,6 +30,8 @@ class FleaScope():
 
         # TODO try to gear up to 115200 baud
 
+        # TODO add resetting logic when device is not responding
+
         self.ver = self.serial.exec("ver")
         logging.debug(f"FleaScope version: {self.ver}")
         # TODO check if version is compatible
