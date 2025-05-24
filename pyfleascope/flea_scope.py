@@ -102,36 +102,36 @@ class FleaScope():
 
 
 class FleaProbe():
-    scope: FleaScope
-    multiplier: int
-    cal_zero: float | None = None
-    cal_3v3: float | None = None
+    _scope: FleaScope
+    _multiplier: int
+    _cal_zero: float | None = None
+    _cal_3v3: float | None = None
 
     def __init__(self, scope: FleaScope, multiplier: int):
-        self.scope = scope
-        self.multiplier = multiplier
+        self._scope = scope
+        self._multiplier = multiplier
 
     def read_calibration_from_flash(self):
-        self.scope.serial.exec(f"dim cal_zero_x{self.multiplier} as flash, cal_3v3_x{self.multiplier} as flash")
-        self.cal_zero = (int(self.scope.serial.exec(f"print cal_zero_x{self.multiplier}")) - 1000) + 2048
-        self.cal_3v3 = (int(self.scope.serial.exec(f"print cal_3v3_x{self.multiplier}")) - 1000) / self.multiplier
+        self._scope.serial.exec(f"dim cal_zero_x{self._multiplier} as flash, cal_3v3_x{self._multiplier} as flash")
+        self._cal_zero = (int(self._scope.serial.exec(f"print cal_zero_x{self._multiplier}")) - 1000) + 2048
+        self._cal_3v3 = (int(self._scope.serial.exec(f"print cal_3v3_x{self._multiplier}")) - 1000) / self._multiplier
 
-        logging.debug(f"Probe x{self.multiplier} calibration: cal_zero={self.cal_zero}, cal_3v3={self.cal_3v3}")
-        if (self.cal_zero == self.cal_3v3):
-            raise ValueError(f"Calibration values for probe x{self.multiplier} are equal ({self.cal_zero}).")
+        logging.debug(f"Probe x{self._multiplier} calibration: cal_zero={self._cal_zero}, cal_3v3={self._cal_3v3}")
+        if (self._cal_zero == self._cal_3v3):
+            raise ValueError(f"Calibration values for probe x{self._multiplier} are equal ({self._cal_zero}).")
 
     def set_calibration(self, offset_0: float, offset_3v3: float):
-        self.cal_zero = offset_0
-        self.cal_3v3 = offset_3v3
+        self._cal_zero = offset_0
+        self._cal_3v3 = offset_3v3
 
     def write_calibration_to_flash(self):
-        if self.cal_zero is None or self.cal_3v3 is None:
+        if self._cal_zero is None or self._cal_3v3 is None:
             raise ValueError("Calibration values are not set.")
-        self.scope.serial.exec(f"cal_zero_x{self.multiplier} = {int(self.cal_zero - 2048 + 1000 + 0.5)}")
-        self.scope.serial.exec(f"cal_3v3_x{self.multiplier} = {int(self.cal_3v3 * self.multiplier + 1000 + 0.5)}")
+        self._scope.serial.exec(f"cal_zero_x{self._multiplier} = {int(self._cal_zero - 2048 + 1000 + 0.5)}")
+        self._scope.serial.exec(f"cal_3v3_x{self._multiplier} = {int(self._cal_3v3 * self._multiplier + 1000 + 0.5)}")
 
     def read_stable_value_for_calibration(self):
-        data = self.scope.raw_read(timedelta(milliseconds=20), 0)
+        data = self._scope.raw_read(timedelta(milliseconds=20), 0)
         bnc_data = data['bnc']
         if bnc_data.max() - bnc_data.min() > 14:
             raise ValueError("Signal is not stable enough for calibration. Values ranged from "
@@ -139,28 +139,28 @@ class FleaProbe():
         return bnc_data.mean()
 
     def _raw_to_voltage(self, raw_value: float):
-        if self.cal_zero is None or self.cal_3v3 is None:
+        if self._cal_zero is None or self._cal_3v3 is None:
             raise ValueError("Calibration values are not set.")
-        return (raw_value - self.cal_zero) / self.cal_3v3 * 3.3
+        return (raw_value - self._cal_zero) / self._cal_3v3 * 3.3
 
     def _voltage_to_raw(self, voltage: float):
-        if self.cal_zero is None or self.cal_3v3 is None:
+        if self._cal_zero is None or self._cal_3v3 is None:
             raise ValueError("Calibration values are not set.")
-        return (voltage / 3.3 * self.cal_3v3) + self.cal_zero
+        return (voltage / 3.3 * self._cal_3v3) + self._cal_zero
 
     def calibrate_0(self):
         # should be within ([2028, 2140]) for x1. default 2104
         # should be within ([2028, 2208]) for x10. default 2160
-        self.cal_zero = self.read_stable_value_for_calibration()
-        return self.cal_zero
+        self._cal_zero = self.read_stable_value_for_calibration()
+        return self._cal_zero
 
     def calibrate_3v3(self):
         # should be within [940, 1100] for x1. default 1036
         # should be within [88, 120] for x10. default 108
-        if self.cal_zero is None:
+        if self._cal_zero is None:
             raise ValueError("Zero-Calibration needs to be done first.")
-        self.cal_3v3 = self.read_stable_value_for_calibration() - self.cal_zero
-        return self.cal_3v3
+        self._cal_3v3 = self.read_stable_value_for_calibration() - self._cal_zero
+        return self._cal_3v3
 
     def read(self, time_frame: timedelta, trigger: DigitalTrigger | AnalogTrigger | None = None, delay: timedelta = timedelta(milliseconds=0)):
         if trigger is None:
@@ -169,6 +169,6 @@ class FleaProbe():
             trigger_fields = trigger.into_trigger_fields()
         else:
             trigger_fields = trigger.into_trigger_fields(self._voltage_to_raw)
-        df = self.scope.raw_read(time_frame, trigger_fields, delay)
+        df = self._scope.raw_read(time_frame, trigger_fields, delay)
         df['bnc'] = self._raw_to_voltage(df['bnc'])
         return df
