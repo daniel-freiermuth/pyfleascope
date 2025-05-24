@@ -80,7 +80,8 @@ class FleaScope():
         # data['bnc'] = data['bnc'] / 4
         return data
 
-    def extract_bits(self, data: pd.DataFrame):
+    @staticmethod
+    def extract_bits(data: pd.DataFrame):
         data['bitmap'] = data['bitmap'].apply(functools.partial(int, base=16))
         for bit in range(10):
             data[f'bit_{bit}'] = data['bitmap'].apply(lambda x: bool((x >> bit) & 1))
