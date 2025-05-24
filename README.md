@@ -9,8 +9,11 @@ Connect to your FleaScope
 ```python
 from pyfleascope.flea_scope import FleaScope
 
-scope = FleaScope('/dev/ttyACM0')
+scope = FleaScope() # for default name FleaScope
+# scope = FleaScope('scope1')
+# scope = FleaScope(port='/dev/ttyACM0')
 ```
+Connecting by name will also take care of resetting the device if necessary.
 
 Get your first reading from the BNC connector
 ```python
