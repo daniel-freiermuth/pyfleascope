@@ -16,6 +16,8 @@ class Waveform(Enum):
     EKG = "ekg"
 
 class FleaScope():
+    _MSPS = 18  # Million samples per second. approximate target sample rate = 3.6*5. Up to 3.75*5 possible
+
     def __init__(self, port: str, baud: int=9600, read_calibrations: bool=True):
         self.serial = SerialTerminal(port, baud, prompt="> ")
         self.serial.send_ctrl_c()
@@ -48,8 +50,8 @@ class FleaScope():
     def set_waveform(self, waveform: Waveform, hz: int):
         self.serial.exec(f"wave {waveform.value} {hz}")
         
-    def timedelta_to_ticks_div2000(self, time_frame: timedelta):
-        return time_frame.microseconds * 9 / 1000 + time_frame.seconds * 9000
+    def _timedelta_to_ticks(self, time_frame: timedelta):
+        return time_frame.microseconds * self._MSPS + time_frame.seconds * 1_000_000 * self._MSPS
 
     def raw_read(self, time_frame: timedelta, trigger_fields: str, delay: timedelta = timedelta(milliseconds=0)):
         if time_frame.total_seconds() < 0:
@@ -64,9 +66,9 @@ class FleaScope():
         if delay.total_seconds() > 1:
             raise ValueError("Delay too large. Max 1 second.")
 
-        ticks_per_sample = int(self.timedelta_to_ticks_div2000(time_frame))
+        ticks_per_sample = int(self._timedelta_to_ticks(time_frame) / 2000.0 + 0.5)
         assert ticks_per_sample > 0, "Ticks per sample must be greater than 0"
-        delay_ticks = self.timedelta_to_ticks_div2000(delay) * 2000
+        delay_ticks = self._timedelta_to_ticks(delay)
         delay_samples = int(delay_ticks / ticks_per_sample)
         return self._raw_read(ticks_per_sample, trigger_fields, delay_samples)
 
