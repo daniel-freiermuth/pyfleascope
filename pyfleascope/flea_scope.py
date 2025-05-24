@@ -16,7 +16,7 @@ class Waveform(Enum):
     EKG = "ekg"
 
 class FleaScope():
-    _MSPS = 18  # Million samples per second. approximate target sample rate = 3.6*5. Up to 3.75*5 possible
+    _MSPS = 120.0 * 5 / 33  # 18.18… Million samples per second
 
     def __init__(self, port: str, baud: int=9600, read_calibrations: bool=True):
         self.serial = SerialTerminal(port, baud, prompt="> ")
