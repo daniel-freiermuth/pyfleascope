@@ -4,6 +4,8 @@ import functools
 import logging
 import pandas as pd
 import io
+import time
+import pyudev
 from pyfleascope.serial_terminal import SerialTerminal
 from pyfleascope.trigger_config import AnalogTrigger, AnalogTriggerBehavior, DigitalTrigger
 
@@ -18,21 +20,68 @@ class Waveform(Enum):
 class FleaScope():
     _MSPS = 120.0 * 5 / 33  # 18.18… Million samples per second
 
-    def __init__(self, port: str, baud: int=9600, read_calibrations: bool=True):
-        self.serial = SerialTerminal(port, baud, prompt="> ")
-        self.serial.send_ctrl_c()
-        self.serial.exec("prompt on")
+    def _validate_port(self, name: str | None, port: str):
+        context = pyudev.Context()
+        device = pyudev.Devices.from_device_file(context, port)
+        valid_vendor_model_variants = [
+          [ '0403', 'a660' ],
+          [ '1b4f', 'a660' ],
+          [ '1b4f', 'e66e' ],
+          [ '04d8', 'e66e' ],
+        ]
+
+        if 'ID_MODEL' not in device.properties or \
+            'ID_VENDOR_ID' not in device.properties or \
+            'ID_MODEL_ID' not in device.properties or \
+            [device.properties['ID_VENDOR_ID'], device.properties['ID_MODEL_ID']] not in valid_vendor_model_variants:
+                raise ValueError(f"Device {port} is not a FleaScope.")
+        if name is not None and device.properties['ID_MODEL'] != name:
+                raise ValueError(f"Device {port} is not the FleaScope we're looking for.")
+
+    def _get_device_port(self, name: str) -> str:
+        logging.debug(f"Searching for FleaScope device with name {name}")
+        context = pyudev.Context()
+        for device in context.list_devices(subsystem='tty'):
+            logging.debug(f"Found device: {device.device_node}")
+            try:
+                self._validate_port(name, device.device_node)
+                logging.info(f"Device {device.device_node} is our FleaScope device.")
+                return device.device_node
+            except ValueError:
+                pass
+        raise ValueError(f"No FleaScope device {name} found. Please connect a FleaScope or specify the port manually.")
+
+    def _get_working_serial(self, name: str, baud:int):
+        while True:
+            port_candidate = self._get_device_port(name)
+            serial = SerialTerminal(port_candidate, baud, prompt="> ")
+            logging.debug("Connected to FleaScope. Sending CTRL-C to reset.")
+            serial.send_ctrl_c()
+            logging.debug("Turning on prompt")
+            try:
+                serial.exec("prompt on", timeout=1.0)
+                break
+            except TimeoutError:
+                serial.send_reset()
+                time.sleep(1)
+        return serial
+
+    def __init__(self, name : str | None = None, port: str | None = None, baud: int=9600, read_calibrations: bool=True):
+        if port is None:
+            name = 'FleaScope' if name is None else name
+            self.serial = self._get_working_serial(name, baud)
+        else:
+            logging.debug(f"Connecting to FleaScope on port {port} with baud rate {baud}")
+            self._validate_port(name, port)
+            self.serial = SerialTerminal(port, baud, prompt="> ")
+            logging.debug("Connected to FleaScope. Sending CTRL-C to reset.")
+            self.serial.send_ctrl_c()
+            logging.debug("Turning on prompt")
+            self.serial.exec("prompt on", timeout=1.0)
+        logging.debug("Turning off echo")
         self.serial.exec("echo off")
 
-        # TODO check for usb vendor ids
-        # { usbVendorId: 0x0403, usbProductId: 0xA660 },
-        # { usbVendorId: 0x1b4f, usbProductId: 0xA660 },
-        # { usbVendorId: 0x1b4f, usbProductId: 0xE66E },
-        # { usbVendorId: 0x04D8, usbProductId: 0xE66E },
-
         # TODO try to gear up to 115200 baud
-
-        # TODO add resetting logic when device is not responding
 
         self.ver = self.serial.exec("ver")
         logging.debug(f"FleaScope version: {self.ver}")
@@ -40,6 +89,7 @@ class FleaScope():
 
         self.hostname = self.serial.exec("hostname")
         logging.debug(f"FleaScope hostname: {self.hostname}")
+        # TODO check if hostname is correct
         self.probe1 = FleaProbe(self, 1)
         self.probe10 = FleaProbe(self, 10)
 
