@@ -146,6 +146,7 @@ class FleaProbe():
         # should be within ([2028, 2140]) for x1. default 2104
         # should be within ([2028, 2208]) for x10. default 2160
         self.cal_zero = self.read_stable_value_for_calibration()
+        return self.cal_zero
 
     def calibrate_3v3(self):
         # should be within [940, 1100] for x1. default 1036
@@ -153,6 +154,7 @@ class FleaProbe():
         if self.cal_zero is None:
             raise ValueError("Zero-Calibration needs to be done first.")
         self.cal_3v3 = self.read_stable_value_for_calibration() - self.cal_zero
+        return self.cal_3v3
 
     def read(self, time_frame: timedelta, trigger: DigitalTrigger | AnalogTrigger | None = None, delay: timedelta = timedelta(milliseconds=0)):
         if trigger is None:
