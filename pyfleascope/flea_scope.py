@@ -45,8 +45,8 @@ class FleaScope():
             self.probe1.read_calibration_from_flash()
             self.probe10.read_calibration_from_flash()
     
-    def set_waveform(self, waveform: Waveform, frequency: int):
-        self.serial.exec(f"wave {waveform.value} {frequency}")
+    def set_waveform(self, waveform: Waveform, hz: int):
+        self.serial.exec(f"wave {waveform.value} {hz}")
         
     def timedelta_to_ticks_div2000(self, time_frame: timedelta):
         return time_frame.microseconds * 9 / 1000 + time_frame.seconds * 9000
