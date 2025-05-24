@@ -6,6 +6,8 @@ class SerialTerminal:
         self.port = port
         self.baudrate = baudrate
         self.prompt = prompt
+        self.serial.timeout = 0
+        self.serial.read_all()
 
     def exec(self, command: str, timeout: float | None = None):
         self.serial.write((command + "\n").encode())

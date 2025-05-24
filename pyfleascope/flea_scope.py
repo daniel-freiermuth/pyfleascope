@@ -160,9 +160,11 @@ class FleaProbe():
     def __init__(self, scope: FleaScope, multiplier: int):
         self._scope = scope
         self._multiplier = multiplier
-
+    
     def read_calibration_from_flash(self):
-        self._scope.serial.exec(f"dim cal_zero_x{self._multiplier} as flash, cal_3v3_x{self._multiplier} as flash")
+        dim_result = self._scope.serial.exec(f"dim cal_zero_x{self._multiplier} as flash, cal_3v3_x{self._multiplier} as flash")
+        if dim_result == f"var 'cal_zero_x{self._multiplier}' already declared at this scope\r\nvar 'cal_3v3_x{self._multiplier}' already declared at this scope":
+            logging.debug("Variables for calibration already declared. Reading values.")
         self._cal_zero = (int(self._scope.serial.exec(f"print cal_zero_x{self._multiplier}")) - 1000) + 2048
         self._cal_3v3 = (int(self._scope.serial.exec(f"print cal_3v3_x{self._multiplier}")) - 1000) / self._multiplier
 
