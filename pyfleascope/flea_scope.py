@@ -20,6 +20,8 @@ class Waveform(Enum):
 class FleaScope():
     _MSPS = 120.0 * 5 / 33  # 18.18… Million samples per second
 
+    serial : SerialTerminal | None = None
+
     def _validate_port(self, name: str | None, port: str):
         context = pyudev.Context()
         device = pyudev.Devices.from_device_file(context, port)
@@ -147,8 +149,9 @@ class FleaScope():
         self.serial.send_ctrl_c()
 
     def __del__(self):
-        self.serial.exec("echo on")
-        self.serial.exec("prompt on")
+        if self.serial is not None:
+            self.serial.exec("echo on")
+            self.serial.exec("prompt on")
 
 
 class FleaProbe():
