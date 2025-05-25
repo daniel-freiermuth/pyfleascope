@@ -17,12 +17,24 @@ class Waveform(Enum):
     TRIANGLE= "triangle"
     EKG = "ekg"
 
-class FleaScope():
-    _MSPS = 120.0 * 5 / 33  # 18.18… Million samples per second
+class FleaConnector():
+    @staticmethod
+    def connect(name : str | None = None, port: str | None = None, baud: int=9600, read_calibrations: bool=True):
+        if port is None:
+            name = 'FleaScope' if name is None else name
+            serial = FleaConnector._get_working_serial(name, baud)
+        else:
+            logging.debug(f"Connecting to FleaScope on port {port} with baud rate {baud}")
+            FleaConnector._validate_port(name, port)
+            serial = SerialTerminal(port, baud, prompt="> ")
+            logging.debug("Connected to FleaScope. Sending CTRL-C to reset.")
+            serial.send_ctrl_c()
+            logging.debug("Turning on prompt")
+            serial.exec("prompt on", timeout=1.0)
+        return serial
 
-    serial : SerialTerminal | None = None
-
-    def _validate_port(self, name: str | None, port: str):
+    @staticmethod
+    def _validate_port(name: str | None, port: str):
         context = pyudev.Context()
         device = pyudev.Devices.from_device_file(context, port)
         valid_vendor_model_variants = [
@@ -40,22 +52,24 @@ class FleaScope():
         if name is not None and device.properties['ID_MODEL'] != name:
                 raise ValueError(f"Device {port} is not the FleaScope we're looking for.")
 
-    def _get_device_port(self, name: str) -> str:
+    @staticmethod
+    def _get_device_port(name: str) -> str:
         logging.debug(f"Searching for FleaScope device with name {name}")
         context = pyudev.Context()
         for device in context.list_devices(subsystem='tty'):
             logging.debug(f"Found device: {device.device_node}")
             try:
-                self._validate_port(name, device.device_node)
+                FleaConnector._validate_port(name, device.device_node)
                 logging.info(f"Device {device.device_node} is our FleaScope device.")
                 return device.device_node
             except ValueError:
                 pass
         raise ValueError(f"No FleaScope device {name} found. Please connect a FleaScope or specify the port manually.")
 
-    def _get_working_serial(self, name: str, baud:int):
+    @staticmethod
+    def _get_working_serial(name: str, baud:int):
         while True:
-            port_candidate = self._get_device_port(name)
+            port_candidate = FleaConnector._get_device_port(name)
             serial = SerialTerminal(port_candidate, baud, prompt="> ")
             logging.debug("Connected to FleaScope. Sending CTRL-C to reset.")
             serial.send_ctrl_c()
@@ -68,18 +82,21 @@ class FleaScope():
                 time.sleep(1)
         return serial
 
-    def __init__(self, name : str | None = None, port: str | None = None, baud: int=9600, read_calibrations: bool=True):
-        if port is None:
-            name = 'FleaScope' if name is None else name
-            self.serial = self._get_working_serial(name, baud)
-        else:
-            logging.debug(f"Connecting to FleaScope on port {port} with baud rate {baud}")
-            self._validate_port(name, port)
-            self.serial = SerialTerminal(port, baud, prompt="> ")
-            logging.debug("Connected to FleaScope. Sending CTRL-C to reset.")
-            self.serial.send_ctrl_c()
-            logging.debug("Turning on prompt")
-            self.serial.exec("prompt on", timeout=1.0)
+class FleaScope():
+    _MSPS = 120.0 * 5 / 33  # 18.18… Million samples per second
+
+    serial : SerialTerminal
+
+    @staticmethod
+    def connect(name : str | None = None, port: str | None = None, baud: int=9600, read_calibrations: bool=True):
+        return FleaConnector.connect(name, port, baud, read_calibrations)
+
+    def __init__(self, serial: SerialTerminal, read_calibrations: bool=True):
+        self.serial = serial
+        logging.debug("Connected to FleaScope. Sending CTRL-C to reset.")
+        self.serial.send_ctrl_c()
+        logging.debug("Turning on prompt")
+        self.serial.exec("prompt on", timeout=1.0)
         logging.debug("Turning off echo")
         self.serial.exec("echo off")
 

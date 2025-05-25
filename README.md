@@ -9,9 +9,9 @@ Connect to your FleaScope
 ```python
 from pyfleascope.flea_scope import FleaScope
 
-scope = FleaScope() # for default name FleaScope
-# scope = FleaScope('scope1')
-# scope = FleaScope(port='/dev/ttyACM0')
+scope = FleaScope.connect() # for default hostname FleaScope
+# scope = FleaScope.connect('scope1')
+# scope = FleaScope.connect(port='/dev/ttyACM0')
 ```
 Connecting by name will also take care of resetting the device if necessary.
 
@@ -85,8 +85,8 @@ Multiple FleaScopes can be used at the same time.
 For exact timing alignment, the trigger signal can be forwarded.
 
 ```python
-scope1 = FleaScope('/dev/ttyACM0')
-scope2 = FleaScope('/dev/ttyACM1')
+scope1 = FleaScope.connect('scope1')
+scope2 = FleaScope.connect('scope2')
 
 
 capture_time = timedelta(microseconds=120)
