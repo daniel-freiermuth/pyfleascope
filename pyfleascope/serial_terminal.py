@@ -6,6 +6,9 @@ class SerialTerminal:
         self._port = port
         self._baudrate = baudrate
         self._prompt = prompt
+        self._flush()
+    
+    def _flush(self):
         self._serial.timeout = 0
         self._serial.read_all()
 
@@ -19,6 +22,7 @@ class SerialTerminal:
     
     def send_ctrl_c(self):
         self._serial.write(b'\x03')
+        self._flush()
 
     def send_reset(self):
         self._serial.write(b'reset\n')
