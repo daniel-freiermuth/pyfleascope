@@ -6,7 +6,7 @@ import pandas as pd
 import io
 import time
 import pyudev
-from pyfleascope.serial_terminal import SerialTerminal
+from pyfleascope.serial_terminal import FleaTerminal
 from pyfleascope.trigger_config import AnalogTrigger, AnalogTriggerBehavior, DigitalTrigger
 
 logging.basicConfig(level=logging.INFO)
@@ -26,11 +26,8 @@ class FleaConnector():
         else:
             logging.debug(f"Connecting to FleaScope on port {port} with baud rate {baud}")
             FleaConnector._validate_port(name, port)
-            serial = SerialTerminal(port, baud, prompt="> ")
-            logging.debug("Connected to FleaScope. Sending CTRL-C to reset.")
-            serial.send_ctrl_c()
-            logging.debug("Turning on prompt")
-            serial.exec("prompt on", timeout=1.0)
+            serial = FleaTerminal(port, baud)
+            serial.initialize()
         return serial
 
     @staticmethod
@@ -70,12 +67,9 @@ class FleaConnector():
     def _get_working_serial(name: str, baud:int):
         while True:
             port_candidate = FleaConnector._get_device_port(name)
-            serial = SerialTerminal(port_candidate, baud, prompt="> ")
-            logging.debug("Connected to FleaScope. Sending CTRL-C to reset.")
-            serial.send_ctrl_c()
-            logging.debug("Turning on prompt")
+            serial = FleaTerminal(port_candidate, baud)
             try:
-                serial.exec("prompt on", timeout=1.0)
+                serial.initialize()
                 break
             except TimeoutError:
                 serial.send_reset()
@@ -85,18 +79,14 @@ class FleaConnector():
 class FleaScope():
     _MSPS = 120.0 * 5 / 33  # 18.18… Million samples per second
 
-    serial : SerialTerminal
+    serial : FleaTerminal
 
     @staticmethod
     def connect(name : str | None = None, port: str | None = None, baud: int=9600, read_calibrations: bool=True):
         return FleaConnector.connect(name, port, baud, read_calibrations)
 
-    def __init__(self, serial: SerialTerminal, read_calibrations: bool=True):
+    def __init__(self, serial: FleaTerminal, read_calibrations: bool=True):
         self.serial = serial
-        logging.debug("Connected to FleaScope. Sending CTRL-C to reset.")
-        self.serial.send_ctrl_c()
-        logging.debug("Turning on prompt")
-        self.serial.exec("prompt on", timeout=1.0)
         logging.debug("Turning off echo")
         self.serial.exec("echo off")
 
