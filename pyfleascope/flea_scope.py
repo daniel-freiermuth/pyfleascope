@@ -28,7 +28,7 @@ class FleaConnector():
             FleaConnector._validate_port(name, port)
             serial = FleaTerminal(port, baud)
             serial.initialize()
-        return serial
+        return FleaScope(serial)
 
     @staticmethod
     def _validate_port(name: str | None, port: str):
