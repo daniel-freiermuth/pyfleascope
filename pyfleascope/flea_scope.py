@@ -156,9 +156,8 @@ class FleaScope():
         self.serial.send_ctrl_c()
 
     def __del__(self):
-        if self.serial is not None:
-            self.serial.exec("echo on")
-            self.serial.exec("prompt on")
+        self.serial.exec("echo on")
+        self.serial.exec("prompt on")
 
 
 class FleaProbe():
