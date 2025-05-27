@@ -20,6 +20,27 @@ Get your first reading from the BNC connector
 df = scope.x1.read(timedelta(milliseconds=20))['bnc']
 ```
 
+## Calibration
+
+Calibration values are by default read from flash upon connection.
+If necessary, recalibration can be performed via
+
+```python
+# BNC probe in x1 mode
+# Connect probe to GND
+scope.x1.calibrate_0()
+# Connect probe to 3.3V
+scope.x1.calibrate_3v3()
+scope.x1.write_calibration_to_flash()
+
+# BNC probe in x10 mode
+# Connect probe to GND
+scope.x10.calibrate_0()
+# Connect probe to 3.3V
+scope.x10.calibrate_3v3()
+scope.x10.write_calibration_to_flash()
+```
+
 ## Triggers
 Trigger reading on analog edges
 ```python
