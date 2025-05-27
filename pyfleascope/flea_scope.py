@@ -163,8 +163,8 @@ class FleaScope():
 class FleaProbe():
     _scope: FleaScope
     _multiplier: int
-    _cal_zero: float | None = None
-    _cal_3v3: float | None = None
+    _cal_zero: float | None = None # value for 0V
+    _cal_3v3: float | None = None # value-diff 0V - 3.3V
 
     def __init__(self, scope: FleaScope, multiplier: int):
         self._scope = scope
@@ -212,7 +212,18 @@ class FleaProbe():
     def calibrate_0(self):
         # should be within ([2028, 2140]) for x1. default 2104
         # should be within ([2028, 2208]) for x10. default 2160
+
+        # TODO Things would become easier, if the 3v3 raw values
+        # were stored directly and not as offset. But still stay
+        # compatible to the flash values.
+        
+        try:
+            raw_value_3v3 = self._voltage_to_raw(3.3)
+        except ValueError:
+            raw_value_3v3 = None
         self._cal_zero = self.read_stable_value_for_calibration()
+        if raw_value_3v3 is not None:
+            self._cal_3v3 = raw_value_3v3 - self._cal_zero
         return self._cal_zero
 
     def calibrate_3v3(self):
