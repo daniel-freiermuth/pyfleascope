@@ -19,7 +19,7 @@ class Waveform(Enum):
 
 class FleaConnector():
     @staticmethod
-    def connect(name : str | None = None, port: str | None = None, baud: int=9600, read_calibrations: bool=True):
+    def connect(name : str | None, port: str | None, baud: int, read_calibrations: bool):
         if port is None:
             name = 'FleaScope' if name is None else name
             serial = FleaConnector._get_working_serial(name, baud)
@@ -85,7 +85,7 @@ class FleaScope():
     def connect(name : str | None = None, port: str | None = None, baud: int=9600, read_calibrations: bool=True):
         return FleaConnector.connect(name, port, baud, read_calibrations)
 
-    def __init__(self, serial: FleaTerminal, read_calibrations: bool=True):
+    def __init__(self, serial: FleaTerminal, read_calibrations: bool):
         self.serial = serial
         logging.debug("Turning off echo")
         self.serial.exec("echo off")
