@@ -99,12 +99,12 @@ class FleaScope():
         self.hostname = self.serial.exec("hostname")
         logging.debug(f"FleaScope hostname: {self.hostname}")
         # TODO check if hostname is correct
-        self.probe1 = FleaProbe(self, 1)
-        self.probe10 = FleaProbe(self, 10)
+        self.x1 = FleaProbe(self, 1)
+        self.x10 = FleaProbe(self, 10)
 
         if read_calibrations:
-            self.probe1.read_calibration_from_flash()
-            self.probe10.read_calibration_from_flash()
+            self.x1.read_calibration_from_flash()
+            self.x10.read_calibration_from_flash()
     
     def set_waveform(self, waveform: Waveform, hz: int):
         self.serial.exec(f"wave {waveform.value} {hz}")

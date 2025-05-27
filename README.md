@@ -17,7 +17,7 @@ Connecting by name will also take care of resetting the device if necessary.
 
 Get your first reading from the BNC connector
 ```python
-df = scope.probe1.read(timedelta(milliseconds=20))['bnc']
+df = scope.x1.read(timedelta(milliseconds=20))['bnc']
 ```
 
 ## Triggers
@@ -25,7 +25,7 @@ Trigger reading on analog edges
 ```python
 from pyfleascope.trigger_config import AnalogTrigger
 
-df = scope.probe1.read(
+df = scope.x1.read(
             timedelta(milliseconds=20),
             trigger=AnalogTrigger.start_capturing_when().rising_edge(volts=2),
 )
@@ -35,7 +35,7 @@ or on digital signals
 ```python
 from pyfleascope.trigger_config import DigitalTrigger, BitState
 
-df = scope.probe1.read(
+df = scope.x1.read(
             timedelta(milliseconds=20),
             trigger=DigitalTrigger.start_capturing_when()
               .bit1(BitState.HIGH)
@@ -47,7 +47,7 @@ df = scope.probe1.read(
 ## Delay
 Start capturing with a delay.
 ```python
-df = scope.probe1.read(
+df = scope.x1.read(
             timedelta(milliseconds=20),
             trigger=AnalogTrigger.start_capturing_when().rising_edge(volts=2),
             delay=timedelta(milliseconds=0.2),
@@ -68,7 +68,7 @@ The digital input is captured in the column `bitmask`.
 The function `extract_bits` extracts boolean columns `bit_$i` for each bit.
 
 ```python
-df = scope.probe1.read(
+df = scope.x1.read(
             timedelta(milliseconds=20),
             trigger=DigitalTrigger.start_capturing_when()
               .bit0(BitState.HIGH)
@@ -96,13 +96,13 @@ capture_time = timedelta(microseconds=120)
 
 def read_scope1():
     time.sleep(1) # give scope1 time to prepare
-    return scope1.probe1.read(
+    return scope1.x1.read(
         capture_time,
         AnalogTrigger.start_capturing_when().auto(2),
     )
 
 def read_scope2():
-    return scope2.probe1.read(
+    return scope2.x1.read(
             capture_time,
             DigitalTrigger.start_capturing_when().bit0(BitState.HIGH).starts_matching(),
     )
