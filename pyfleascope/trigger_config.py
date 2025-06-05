@@ -31,30 +31,30 @@ class BitTriggerBuilder:
         BitState.DONT_CARE,
     ]
 
-    def _set_bit(self, bit: int, state: BitState):
+    def set_bit(self, bit: int, state: BitState):
         if bit < 0 or bit > len(self._bit_states):
             raise ValueError(f"Bit must be between 0 and {len(self._bit_states) - 1}")
         self._bit_states[bit] = state
         return self
     
     def bit0(self, state: BitState):
-        return self._set_bit(0, state)
+        return self.set_bit(0, state)
     def bit1(self, state: BitState):
-        return self._set_bit(1, state)
+        return self.set_bit(1, state)
     def bit2(self, state: BitState):
-        return self._set_bit(2, state)
+        return self.set_bit(2, state)
     def bit3(self, state: BitState):
-        return self._set_bit(3, state)
+        return self.set_bit(3, state)
     def bit4(self, state: BitState):
-        return self._set_bit(4, state)
+        return self.set_bit(4, state)
     def bit5(self, state: BitState):
-        return self._set_bit(5, state)
+        return self.set_bit(5, state)
     def bit6(self, state: BitState):
-        return self._set_bit(6, state)
+        return self.set_bit(6, state)
     def bit7(self, state: BitState):
-        return self._set_bit(7, state)
+        return self.set_bit(7, state)
     def bit8(self, state: BitState):
-        return self._set_bit(8, state)
+        return self.set_bit(8, state)
 
     def is_matching(self):
         return DigitalTrigger(self._bit_states, DigitalTriggerBehavior.WHILE)
