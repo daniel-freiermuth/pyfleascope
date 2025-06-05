@@ -35,7 +35,7 @@ class FleaTerminal:
     
     def send_ctrl_c(self):
         self._serial.write(b'\x03')
-        self._flush()
+        # self._flush()
 
     def send_reset(self):
         self._serial.write(b'reset\n')
