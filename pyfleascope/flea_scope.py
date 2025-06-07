@@ -34,6 +34,11 @@ class FleaConnector():
     def _validate_port(name: str | None, port: str):
         context = pyudev.Context()
         device = pyudev.Devices.from_device_file(context, port)
+        if not FleaConnector._validate_device(name, device):
+            raise ValueError(f"Port {port} is not the FleaScope device you're looking for.")
+
+    @staticmethod
+    def _validate_device(name: str | None, device: pyudev.Device):
         valid_vendor_model_variants = [
           [ '0403', 'a660' ],
           [ '1b4f', 'a660' ],
@@ -45,23 +50,23 @@ class FleaConnector():
             'ID_VENDOR_ID' not in device.properties or \
             'ID_MODEL_ID' not in device.properties or \
             [device.properties['ID_VENDOR_ID'], device.properties['ID_MODEL_ID']] not in valid_vendor_model_variants:
-                raise ValueError(f"Device {port} is not a FleaScope.")
+                return False
         if name is not None and device.properties['ID_MODEL'] != name:
-                raise ValueError(f"Device {port} is not the FleaScope we're looking for.")
+                return False
+        return True
 
     @staticmethod
     def _get_device_port(name: str) -> str:
         logging.debug(f"Searching for FleaScope device with name {name}")
         context = pyudev.Context()
-        for device in context.list_devices(subsystem='tty'):
-            logging.debug(f"Found device: {device.device_node}")
-            try:
-                FleaConnector._validate_port(name, device.device_node)
-                logging.info(f"Device {device.device_node} is our FleaScope device.")
-                return device.device_node
-            except ValueError:
-                pass
-        raise ValueError(f"No FleaScope device {name} found. Please connect a FleaScope or specify the port manually.")
+        try:
+            return next(
+                     filter(
+                         lambda d: FleaConnector._validate_device(name, d),
+                         context.list_devices(subsystem='tty')
+                   )).device_node
+        except StopIteration:
+            raise ValueError(f"No FleaScope device {name} found. Please connect a FleaScope or specify the port manually.")
 
     @staticmethod
     def _get_working_serial(name: str, baud:int):
