@@ -128,13 +128,14 @@ class FleaScope():
     def raw_read(self, time_frame: timedelta, trigger_fields: str, delay: timedelta = timedelta(milliseconds=0)):
         if time_frame.total_seconds() < 0:
             raise ValueError("Time frame cannot be negative.")
-        if time_frame.total_seconds() > 2:
-            raise ValueError("Time frame too large. Max 2 seconds.")
+        if time_frame.total_seconds() > 3.49:
+            raise ValueError("Time frame too large.")
         if time_frame.seconds == 0 and time_frame.microseconds < 111:
             raise ValueError("Time frame too small. Min 111 microseconds.")
 
         if delay.total_seconds() < 0:
             raise ValueError("Delay cannot be negative.")
+        # TODO: Check how delay is handled in firmware and adapt limit calculation
         if delay.total_seconds() > 1:
             raise ValueError("Delay too large. Max 1 second.")
 
