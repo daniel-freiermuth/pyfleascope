@@ -134,3 +134,12 @@ with ThreadPoolExecutor(max_workers=8) as executor:
     df1 = f1.result()
     df2 = f2.result()
 ```
+
+## Cancel ongoing read
+
+While waiting for the trigger or capturing values, the FleaScope is unresponsive.
+The ongoing read operation can be canceled via the `unblock` method.
+
+```python
+scope.unblock()
+```
