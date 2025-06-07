@@ -209,7 +209,9 @@ class FleaProbe():
         self._scope.serial.exec(f"cal_3v3_x{self._multiplier} = {int(self._cal_3v3 * self._multiplier + 1000 + 0.5)}")
 
     def read_stable_value_for_calibration(self):
-        data = self._scope.raw_read(timedelta(milliseconds=20), 0)
+        data = self._scope.raw_read(
+            timedelta(milliseconds=20),
+            DigitalTrigger.start_capturing_when().is_matching().into_trigger_fields())
         bnc_data = data['bnc']
         if bnc_data.max() - bnc_data.min() > 14:
             raise ValueError("Signal is not stable enough for calibration. Values ranged from "
