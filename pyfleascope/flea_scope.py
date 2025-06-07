@@ -77,7 +77,10 @@ class FleaConnector():
         return serial
 
 class FleaScope():
-    _MSPS = 120.0 * 5 / 33  # 18.18… Million samples per second
+    _MSPS = 18 # Million samples per second. target sample rate
+    _MCU_MHZ = 120 # MCU clock frequency in MHz, used for calculations
+    _INTERLEAVE = 5 # number of ADCs interleaved
+    _TOTAL_SAMPLES = 2000
 
     serial : FleaTerminal
 
@@ -108,10 +111,20 @@ class FleaScope():
     
     def set_waveform(self, waveform: Waveform, hz: int):
         self.serial.exec(f"wave {waveform.value} {hz}")
-        
-    def _timedelta_to_ticks(self, time_frame: timedelta):
-        return time_frame.microseconds * self._MSPS + time_frame.seconds * 1_000_000 * self._MSPS
+    
+    def _timedelta_to_us(self, time_frame: timedelta):
+        return time_frame.microseconds + time_frame.seconds * 1000_000
 
+    def _number1_to_prescaler(self, number1: int):
+        ps = 16 if number1 > 1000 else 1
+        t = int(self._MCU_MHZ * number1 * self._INTERLEAVE / ps / self._MSPS + 0.5) # mimics firmware calculation
+        assert t > 0, "Prescaler must be greater than 0"
+        assert t <= 65535, "Prescaler must be less than 65536"
+        return ps*t
+    
+    def _prescaler_to_effective_msps(self, prescaler: int):
+        return self._MCU_MHZ * self._INTERLEAVE / prescaler
+        
     def raw_read(self, time_frame: timedelta, trigger_fields: str, delay: timedelta = timedelta(milliseconds=0)):
         if time_frame.total_seconds() < 0:
             raise ValueError("Time frame cannot be negative.")
@@ -125,23 +138,26 @@ class FleaScope():
         if delay.total_seconds() > 1:
             raise ValueError("Delay too large. Max 1 second.")
 
-        ticks_per_sample = int(self._timedelta_to_ticks(time_frame) / 2000.0 + 0.5)
-        assert ticks_per_sample > 0, "Ticks per sample must be greater than 0"
-        delay_ticks = self._timedelta_to_ticks(delay)
-        delay_samples = int(delay_ticks / ticks_per_sample)
-        return self._raw_read(ticks_per_sample, trigger_fields, delay_samples)
+        number1 = int(self._MSPS*self._timedelta_to_us(time_frame)/(self._TOTAL_SAMPLES + 0.0))
+        assert number1 > 0, "Ticks per sample must be greater than 0"
 
-    def _raw_read(self, tick_amount: int, trigger_fields: str, delay: int):
-        logging.debug(f"Reading with {tick_amount} tick resolution with trigger {trigger_fields} and delay {delay}")
-        data = self.serial.exec(f"scope {tick_amount} {trigger_fields} {delay}")
+        prescaler = self._number1_to_prescaler(number1)
+        effective_msps = self._prescaler_to_effective_msps(prescaler)
+
+        delay_samples = int(self._timedelta_to_us(delay) * effective_msps)
+        assert delay_samples <= 1000_000
+
+        logging.debug(f"Reading with {number1} tick resolution with trigger {trigger_fields} and delay {delay_samples}")
+        data = self.serial.exec(f"scope {number1} {trigger_fields} {delay_samples}")
         data = pd.read_csv(
             io.StringIO(data),
             names=["bnc", "bitmap"],
             sep=",",
             header=None,
             dtype={0: float, 1: str})
+        # TODO label jitter correctly
         data.set_index(
-            pd.RangeIndex(start=0, stop=len(data), step=1) * tick_amount / 1_000_000 / self._MSPS,
+            pd.RangeIndex(start=0, stop=len(data), step=1) / 1_000_000 / effective_msps,
             inplace=True)
         return data
 
