@@ -16,6 +16,7 @@ class FleaTerminal:
         logging.debug("Turning on prompt")
         self._exec("prompt on", timeout=1.0)
         self._initialized = True
+        self._flush()
     
     def _flush(self):
         self._serial.timeout = 0

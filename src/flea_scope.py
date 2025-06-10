@@ -6,8 +6,8 @@ import pandas as pd
 import io
 import time
 import pyudev
-from pyfleascope.serial_terminal import FleaTerminal
-from pyfleascope.trigger_config import AnalogTrigger, AnalogTriggerBehavior, DigitalTrigger
+from src.serial_terminal import FleaTerminal
+from src.trigger_config import AnalogTrigger, AnalogTriggerBehavior, DigitalTrigger
 
 logging.basicConfig(level=logging.INFO)
 
@@ -78,7 +78,7 @@ class FleaConnector():
                 break
             except TimeoutError:
                 serial.send_reset()
-                time.sleep(1)
+                time.sleep(2)
         return serial
 
 class FleaScope():
