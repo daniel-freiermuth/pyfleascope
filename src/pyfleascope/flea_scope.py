@@ -160,7 +160,8 @@ class FleaScope():
         effective_msps = self._prescaler_to_effective_msps(prescaler)
 
         delay_samples = int(self._timedelta_to_us(delay) * effective_msps)
-        assert delay_samples <= 1000_000
+        if delay_samples > 1000_000:
+            raise ValueError("Delay too large. More than 1M samples.")
 
         logging.debug(f"Reading with {number1} tick resolution with trigger {trigger_fields} and delay {delay_samples}")
         data = self.serial.exec(f"scope {number1} {trigger_fields} {delay_samples}")

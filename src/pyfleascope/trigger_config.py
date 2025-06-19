@@ -114,5 +114,6 @@ class AnalogTrigger:
     def into_trigger_fields(self, voltage_to_raw: Callable[[float], float]):
         trigger_behavior_flag = self.behavior.value
         raw_level = int(voltage_to_raw(self.level)/4 + 0.5)
-        assert -1023 <= raw_level <= 1023, f"Raw level {raw_level} out of range [-1023, 1023]"
+        if raw_level < -1023 or raw_level > 1023:
+            raise ValueError(f"Voltage {self.level} out of range, must be between -1023 and 1023 raw units")
         return f"{trigger_behavior_flag}{raw_level} 0"
