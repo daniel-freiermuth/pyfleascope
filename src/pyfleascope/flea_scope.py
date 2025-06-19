@@ -187,6 +187,10 @@ class FleaScope():
     def unblock(self):
         self.serial.send_ctrl_c()
 
+    def set_hostname(self, hostname: str):
+        self.serial.exec(f"hostname {hostname}")
+        self.hostname = hostname
+
     def __del__(self):
         self.serial.exec("echo on")
         self.serial.exec("prompt on")
