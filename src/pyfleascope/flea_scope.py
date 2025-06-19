@@ -17,6 +17,11 @@ class Waveform(Enum):
     TRIANGLE= "triangle"
     EKG = "ekg"
 
+class FleaDevice():
+    def __init__(self, name: str, port: str):
+        self.name = name
+        self.port = port
+
 class FleaConnector():
     @staticmethod
     def connect(name : str | None, port: str | None, baud: int, read_calibrations: bool):
@@ -54,17 +59,21 @@ class FleaConnector():
         if name is not None and device.properties['ID_MODEL'] != name:
                 return False
         return True
+    
+    @staticmethod
+    def get_available_devices(name: str | None = None):
+        context = pyudev.Context()
+        return (
+            FleaDevice(d.properties['ID_MODEL'], d.device_node) for d in 
+            context.list_devices(subsystem='tty') if
+            FleaConnector._validate_device(name, d)
+        )
 
     @staticmethod
     def _get_device_port(name: str) -> str:
         logging.debug(f"Searching for FleaScope device with name {name}")
-        context = pyudev.Context()
         try:
-            return next(
-                     filter(
-                         lambda d: FleaConnector._validate_device(name, d),
-                         context.list_devices(subsystem='tty')
-                   )).device_node
+            return next(FleaConnector.get_available_devices(name)).port
         except StopIteration:
             raise ValueError(f"No FleaScope device {name} found. Please connect a FleaScope or specify the port manually.")
 
